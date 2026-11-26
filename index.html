@@ -12,12 +12,12 @@
   --ref:#0b8a4b;--ref-dark:#097139;--ref-soft:#e7f6ed;
   --sample:#d9730d;--sample-dark:#b85f08;--sample-soft:#fdf1e2;
   
-  /* 评分等级颜色（绿到黑渐变，区分度强） */
-  --lv0: hsl(172, 45%, 60%); /* 很差：浅绿 */
-  --lv1: hsl(172, 45%, 46%); /* 较差：偏浅 */
-  --lv2: hsl(172, 45%, 32%); /* 一般：中深 */
-  --lv3: hsl(172, 45%, 18%); /* 良好：深绿 */
-  --lv4: hsl(172, 45%, 8%);  /* 优秀：近乎黑 */
+  /* 评分等级颜色（灰到黑渐变，更客观区分度强） */
+  --lv0: hsl(0, 0%, 70%); /* 很差：浅灰 */
+  --lv1: hsl(0, 0%, 50%); /* 较差：中灰 */
+  --lv2: hsl(0, 0%, 35%); /* 一般：深灰 */
+  --lv3: hsl(0, 0%, 20%); /* 良好：极深灰 */
+  --lv4: hsl(0, 0%, 8%);  /* 优秀：近乎黑 */
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,"Segoe UI",sans-serif}
@@ -149,7 +149,16 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 #ref{background:var(--ref);border-color:var(--ref);color:#fff;font-weight:600}
 #ref:hover:not(:disabled){background:var(--ref-dark);border-color:var(--ref-dark)}
 
-#transport{position:sticky;top:0;z-index:2;box-shadow:0 3px 10px #18332d14}
+/* ---- 顶部统一吸顶容器 ---- */
+.sticky-top-panel {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  margin-top: -16px; /* 抵消容器的内边距，保证视觉上和原来间距一致 */
+}
 
 /* ---- 音频播放进度条（专属参考音频） ---- */
 #seek{
@@ -191,7 +200,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   min-height:38px;
   transition: all 0.15s;
 }
-/* 新增：待测样本激活时，背景和边框变为橙色 */
+/* 待测样本激活时，背景和边框变为橙色 */
 .rating button.clip.active {
   background: var(--sample);
   border-color: var(--sample);
@@ -224,7 +233,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   50% { transform: scaleY(0.3); }
 }
 
-/* ---- 评分滑块（同色系渐变轨道） ---- */
+/* ---- 评分滑块（灰到黑渐变轨道） ---- */
 .rating input[type=range]{
   -webkit-appearance:none;appearance:none;
   width:100%;height:8px;margin:6px 0 2px;
@@ -381,20 +390,18 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 
   <!-- ================= 页面 2：正式评分页 ================= -->
   <div id="experiment" hidden>
-    <!-- 顶部状态栏 -->
-    <div class="bar" style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 22px; margin-bottom:16px; justify-content:space-between; position:sticky; top:0; z-index:3; box-shadow:0 2px 8px #18332d14;">
-      <h2 style="font-size:18px; margin:0; color:var(--ink);">域内语音听音测试</h2>
-      <span class="status" style="margin:0; color:var(--brand); font-weight:700;">当前测试者：<span id="currentParticipantName"></span></span>
+    
+    <!-- 统一吸顶区域 -->
+    <div class="sticky-top-panel">
+      <section id="transport" style="margin-bottom:0; box-shadow:0 3px 10px #18332d14;">
+        <div class="bar">
+          <button id="ref">播放参考</button>
+          <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放位置">
+          <span id="clock">0.00 s</span>
+        </div>
+        <p id="audioStatus" class="status" role="status"></p>
+      </section>
     </div>
-
-    <section id="transport">
-      <div class="bar">
-        <button id="ref">播放参考</button>
-        <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放位置">
-        <span id="clock">0.00 s</span>
-      </div>
-      <p id="audioStatus" class="status" role="status"></p>
-    </section>
 
     <section>
       <!-- 标题与提醒 -->
@@ -422,16 +429,15 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 
 </main>
 
-<!-- 拦截弹窗 -->
+<!-- 强阻断拦截弹窗（只保留一个按钮） -->
 <div id="leaveDialog" class="modal-overlay" hidden>
   <div class="modal-content">
     <h2>当前语音还没听完整</h2>
     <p>您还没有试听以下项目：</p>
     <div id="missingItems" class="missing-list"></div>
-    <p class="status" style="margin-top:16px;">建议先听完当前语音的所有样本（包括参考），这有助于您做出更准确的对比评分。</p>
+    <p class="status" style="margin-top:16px;">必须先听完当前语音的所有样本（包括参考），才能进入后续的测试。这有助于您做出更准确的对比评分。</p>
     <div class="bar" style="justify-content: flex-end; margin-top: 20px;">
-      <button id="stayBtn">继续听本条没听的模型</button>
-      <button id="leaveBtn" class="primary">强制下一条，后面再补没听的</button>
+      <button id="stayBtn" class="primary">去听没听的模型</button>
     </div>
   </div>
 </div>
@@ -498,7 +504,6 @@ let state = null;
 let participant = "";
 let currentCondition = null;
 let loadToken = 0;
-let pendingTargetIndex = null;
 
 /* =========================================================
    4. 工具函数
@@ -591,8 +596,7 @@ function start() {
 
   el("welcomeScreen").hidden = true;
   el("experiment").hidden = false;
-  el("currentParticipantName").textContent = participant;
-
+  
   save();
   showTrial(state.index);
 }
@@ -621,9 +625,17 @@ function getMissingItems(item) {
   return missing;
 }
 
+// 限制不能往后跳，但允许往回听
 function tryGoToTrial(targetIndex) {
   if (targetIndex === state.index) return;
 
+  // 如果是回头听前面的条目，直接放行，不拦截
+  if (targetIndex < state.index) {
+    showTrial(targetIndex);
+    return;
+  }
+
+  // 如果是要往后跳（下一条或后面的数字），检查当前条目是否完整
   const missing = getMissingItems(record());
   if (missing.length === 0) {
     showTrial(targetIndex);
@@ -631,7 +643,6 @@ function tryGoToTrial(targetIndex) {
   }
 
   audio.pause();
-  pendingTargetIndex = targetIndex;
 
   const list = el("missingItems");
   list.replaceChildren();
@@ -932,15 +943,6 @@ el("next").onclick = () => { if (state.index < trials.length - 1) tryGoToTrial(s
 
 el("stayBtn").onclick = () => {
   el("leaveDialog").hidden = true;
-  pendingTargetIndex = null;
-};
-
-el("leaveBtn").onclick = () => {
-  el("leaveDialog").hidden = true;
-  if (pendingTargetIndex !== null) {
-    showTrial(pendingTargetIndex);
-    pendingTargetIndex = null;
-  }
 };
 
 window.addEventListener("beforeunload", save);
