@@ -45,7 +45,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 
 #transport{position:sticky;top:0;z-index:2;box-shadow:0 3px 10px #18332d14}
 
-/* ---- 音频播放进度条（颜色随播放内容变化） ---- */
+/* ---- 音频播放进度条 ---- */
 #seek{
   flex:1;min-width:110px;margin:0;
   -webkit-appearance:none;appearance:none;
@@ -82,7 +82,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 .slider-wrap{min-width:0}
 .rating output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
 
-/* ---- 评分滑块（分段颜色轨道） ---- */
+/* ---- 评分滑块（分段彩色轨道） ---- */
 .rating input[type=range]{
   -webkit-appearance:none;appearance:none;
   width:100%;height:8px;margin:6px 0 2px;
@@ -95,11 +95,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
     var(--lv4) 80%, var(--lv4) 100%);
   outline:none;cursor:pointer;
 }
-/* 未评分时轨道置灰 */
-.rating input[type=range].unrated{
-  background:#dbe6e5;
-}
-/* 滑块按钮统一为白底深色边框，适配任何背景 */
+.rating input[type=range].unrated{ background:#dbe6e5; }
 .rating input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
   width:16px;height:16px;border-radius:50%;
@@ -107,9 +103,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   box-shadow:0 1px 3px rgba(0,0,0,0.3);
   cursor:pointer;transition:transform .1s;
 }
-.rating input[type=range]::-webkit-slider-thumb:hover{
-  transform:scale(1.15);
-}
+.rating input[type=range]::-webkit-slider-thumb:hover{ transform:scale(1.15); }
 .rating input[type=range]::-moz-range-thumb{
   width:16px;height:16px;border-radius:50%;
   background:#fff;border:2px solid #50656a;
@@ -117,7 +111,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   cursor:pointer;
 }
 
-/* ---- 评分刻度：数字与等级文字同一行，文字颜色对应区间 ---- */
+/* ---- 评分刻度 ---- */
 .scale{
   position:relative;
   height:18px;
@@ -155,6 +149,29 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 #progress button.done{border-color:var(--brand);color:var(--brand)}
 #progress button.active{background:var(--brand);border-color:var(--brand);color:#fff}
 [hidden]{display:none!important}
+
+/* ---- 弹窗 ---- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(20,37,42,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+  backdrop-filter: blur(2px);
+}
+.modal-content {
+  background: #fff; border-radius: 14px; padding: 24px;
+  width: min(520px, 90vw); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.modal-content h2 { font-size: 20px; margin-bottom: 12px; color: var(--warn); }
+.missing-list { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.missing-tag {
+  padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 14px;
+}
+.missing-tag.reference {
+  background: var(--ref-soft); color: var(--ref); border: 1px solid var(--ref);
+}
+.missing-tag.clip {
+  background: var(--sample-soft); color: var(--sample); border: 1px solid var(--sample);
+}
+
 @media(max-width:680px){#rows{grid-template-columns:1fr}main{padding:16px 10px}header,section{padding:14px}}
 </style>
 </head>
@@ -163,8 +180,17 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 <header>
   <h1>域内语音听音测试</h1>
   <p>请戴上耳机，在安静环境中试听。先听参考，再比较匿名样本并按整体音质评分。可随时切换样本，每次切换都会从头播放，便于逐段对比。</p>
-  <p>评分范围 0–100：0–20 很差 · 21–40 较差 · 41–60 一般 · 61–80 良好 · 81–100 优秀。</p>
-  <p class="status">绿色按钮播放<b>参考音频</b>，橙色按钮播放<b>待测样本</b>；进度条颜色会同步变化，便于确认当前在听哪一路。</p>
+  <p>评分范围 0–100：
+    <span style="color: var(--lv0); font-weight: 600;">0–20 很差</span> ·
+    <span style="color: var(--lv1); font-weight: 600;">21–40 较差</span> ·
+    <span style="color: var(--lv2); font-weight: 600;">41–60 一般</span> ·
+    <span style="color: var(--lv3); font-weight: 600;">61–80 良好</span> ·
+    <span style="color: var(--lv4); font-weight: 600;">81–100 优秀</span>。
+  </p>
+  <p class="status">
+    <span style="color: var(--ref); font-weight: 600;">绿色按钮</span>播放<b>参考音频</b>，
+    <span style="color: var(--sample); font-weight: 600;">橙色按钮</span>播放<b>待测样本</b>；进度条颜色会同步变化，便于确认当前在听哪一路。
+  </p>
   <div class="bar">
     <label>参与者姓名 <input id="participant" maxlength="64" autocomplete="name" placeholder="例如 张三"></label>
     <button id="start" class="primary">开始 / 继续测试</button>
@@ -202,6 +228,20 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 </div>
 </main>
 
+<!-- 拦截弹窗 -->
+<div id="leaveDialog" class="modal-overlay" hidden>
+  <div class="modal-content">
+    <h2>当前语音还没听完整</h2>
+    <p>您还没有试听以下项目：</p>
+    <div id="missingItems" class="missing-list"></div>
+    <p class="status" style="margin-top:16px;">建议先听完当前语音的所有样本（包括参考），这有助于您做出更准确的对比评分。</p>
+    <div class="bar" style="justify-content: flex-end; margin-top: 20px;">
+      <button id="stayBtn">继续听本条没听的模型</button>
+      <button id="leaveBtn" class="primary">强制下一条，后面再补没听的</button>
+    </div>
+  </div>
+</div>
+
 <audio id="audio" preload="auto"></audio>
 
 <script>
@@ -220,12 +260,10 @@ const MEDIA_ERRORS = {
   4: "文件找不到或格式不支持"
 };
 
-// 条件名 → 文件名（hidden_reference 复用参考音频）
 function fileName(condition) {
   return condition === "hidden_reference" ? referenceFile : condition + ".wav";
 }
 
-// 条件名 + 试听目录 → 完整相对 URL
 function audioUrl(condition, trial) {
   const root = String(audioRoot).replace(/\/+$/, "");
   return root + "/" + encodeURIComponent(trial) + "/" + encodeURIComponent(fileName(condition));
@@ -251,7 +289,6 @@ const conditions = [
   "hidden_reference", "anchor_speex_3950bps"
 ];
 
-// 评分刻度
 const TICK_VALUES  = ["0", "20", "40", "60", "80", "100"];
 const LEVEL_LABELS = ["很差", "较差", "一般", "良好", "优秀"];
 const LEVEL_COLORS = ["var(--lv0)", "var(--lv1)", "var(--lv2)", "var(--lv3)", "var(--lv4)"];
@@ -267,6 +304,7 @@ let state = null;
 let participant = "";
 let currentCondition = null;
 let loadToken = 0;
+let pendingTargetIndex = null; // 记录被拦截的跳转目标
 
 /* =========================================================
    4. 工具函数
@@ -291,7 +329,6 @@ function describeMediaError(media) {
   return MEDIA_ERRORS[media.error.code] || ("错误码 " + media.error.code);
 }
 
-// 等待 <audio> 拿到元数据（时长/声道等）
 function waitForMetadata(media) {
   if (media.readyState >= 1 && Number.isFinite(media.duration)) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -306,14 +343,12 @@ function waitForMetadata(media) {
   });
 }
 
-// 进度条填充比例
 function setSeekFill(time) {
   const max = Number(el("seek").max) || 1;
   const pct = max > 0 ? Math.min(100, Math.max(0, (time / max) * 100)) : 0;
   el("seek").style.setProperty("--seek-fill", pct.toFixed(2) + "%");
 }
 
-// 进度条配色：参考=绿，待测=橙
 function setSeekMode(isReference) {
   const seek = el("seek");
   seek.classList.toggle("ref", isReference);
@@ -352,7 +387,6 @@ function start() {
       }]))
     };
   }
-  // 容错：补齐缺失条目
   trials.forEach(trial => {
     if (!state.items[trial]) {
       state.items[trial] = { order: shuffle(conditions), scores: {}, heard: [] };
@@ -378,6 +412,47 @@ function complete(item) {
     item.order.every(name => item.heard.includes(name) && Number.isInteger(item.scores[name]));
 }
 
+// 获取当前条目还没听的项目
+function getMissingItems(item) {
+  const missing = [];
+  if (!item.heard.includes("reference")) {
+    missing.push({ type: "reference", label: "参考" });
+  }
+  item.order.forEach((name, index) => {
+    if (!item.heard.includes(name)) {
+      missing.push({ type: "clip", label: String.fromCharCode(65 + index) });
+    }
+  });
+  return missing;
+}
+
+// 统一的跳转拦截入口
+function tryGoToTrial(targetIndex) {
+  if (targetIndex === state.index) return;
+
+  const missing = getMissingItems(record());
+
+  if (missing.length === 0) {
+    showTrial(targetIndex);
+    return;
+  }
+
+  // 存在未听项 → 暂停并弹窗
+  audio.pause();
+  pendingTargetIndex = targetIndex;
+
+  const list = el("missingItems");
+  list.replaceChildren();
+  missing.forEach(m => {
+    const span = document.createElement("span");
+    span.className = "missing-tag " + m.type;
+    span.textContent = m.label;
+    list.append(span);
+  });
+
+  el("leaveDialog").hidden = false;
+}
+
 function updateProgress() {
   if (!state) return;
   const count = state.order.filter(id => complete(state.items[id])).length;
@@ -395,18 +470,16 @@ function updateProgress() {
     button.classList.toggle("done", complete(state.items[id]));
     button.classList.toggle("active", index === state.index);
     if (index === state.index) button.setAttribute("aria-current", "step");
-    button.onclick = () => showTrial(index);
+    button.onclick = () => tryGoToTrial(index);
     nav.append(button);
   });
 }
 
-// 构造评分刻度：数字在刻度点，等级文字嵌入刻度之间（同一行），文字颜色对应区间
 function buildScale() {
   const scale = document.createElement("div");
   scale.className = "scale";
   scale.setAttribute("aria-hidden", "true");
-
-  const n = TICK_VALUES.length; // 6 个刻度点
+  const n = TICK_VALUES.length;
 
   TICK_VALUES.forEach((value, i) => {
     const span = document.createElement("span");
@@ -425,7 +498,7 @@ function buildScale() {
     span.className = "level";
     span.textContent = text;
     span.style.color = LEVEL_COLORS[i];
-    const left = ((i + 0.5) / (n - 1)) * 100; // 区间中点，嵌入刻度之间
+    const left = ((i + 0.5) / (n - 1)) * 100;
     span.style.left = left + "%";
     span.style.transform = "translateX(-50%)";
     scale.append(span);
@@ -488,7 +561,7 @@ function showTrial(index) {
   loadToken++;
   audio.pause();
   try { audio.currentTime = 0; } catch (error) { /* 忽略 */ }
-  delete audio.dataset.url;          // 强制下一条重新加载
+  delete audio.dataset.url;
   currentCondition = null;
 
   state.index = index;
@@ -528,9 +601,8 @@ function markHeard(condition) {
 }
 
 /* =========================================================
-   7. 播放引擎（基于 <audio>，file:// 下也能工作）
+   7. 播放引擎
    ========================================================= */
-// 播放指定样本。seekTo 仅用于拖动进度条；不传则始终从头播放。
 async function play(condition, seekTo) {
   const trial = trialId();
   const token = ++loadToken;
@@ -540,10 +612,8 @@ async function play(condition, seekTo) {
     ? "参考"
     : "样本 " + String.fromCharCode(65 + record().order.indexOf(condition));
 
-  // 先切换进度条配色，加载阶段也能看清当前是参考还是待测
   setSeekMode(isReference);
 
-  // 切换样本 → 从头播放；只有拖动进度条时才跳转到指定位置
   const startAt = seekTo == null ? 0 : Math.max(0, Number(seekTo));
 
   if (audio.dataset.url !== url) {
@@ -609,10 +679,8 @@ setInterval(() => { if (!audio.paused && !audio.seeking) updateClock(); }, 60);
 el("start").onclick = start;
 el("ref").onclick = () => play("reference");
 
-// 暂停/继续保留当前位置；切换样本从头播放（在 play 中保证）
 el("toggle").onclick = () => {
   if (!audio.paused) { audio.pause(); return; }
-  // 仅对待测样本续播；参考音频请用“播放参考”重新开始
   if (currentCondition && currentCondition !== "reference" && audio.dataset.url) {
     audio.play().catch(error => {
       if (error.name !== "AbortError") {
@@ -631,8 +699,23 @@ el("seek").oninput = event => {
   el("clock").textContent = at.toFixed(2) + " s";
 };
 
-el("prev").onclick = () => { if (state.index > 0) showTrial(state.index - 1); };
-el("next").onclick = () => { if (state.index < trials.length - 1) showTrial(state.index + 1); };
+// 上一条/下一条接入拦截
+el("prev").onclick = () => { if (state.index > 0) tryGoToTrial(state.index - 1); };
+el("next").onclick = () => { if (state.index < trials.length - 1) tryGoToTrial(state.index + 1); };
+
+// 弹窗按钮事件
+el("stayBtn").onclick = () => {
+  el("leaveDialog").hidden = true;
+  pendingTargetIndex = null;
+};
+
+el("leaveBtn").onclick = () => {
+  el("leaveDialog").hidden = true;
+  if (pendingTargetIndex !== null) {
+    showTrial(pendingTargetIndex);
+    pendingTargetIndex = null;
+  }
+};
 
 window.addEventListener("beforeunload", save);
 
@@ -660,7 +743,6 @@ el("export").onclick = () => {
 
   const url = URL.createObjectURL(new Blob(["\ufeff", csv], {type: "text/csv;charset=utf-8"}));
 
-  // 保留中文姓名，只替换文件系统非法字符
   const fileSafe = participant
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
     .trim() || "participant";
@@ -683,7 +765,6 @@ if (location.protocol === "file:") {
     "<code>http://localhost:8000/mushra_indomain.html</code>。";
 }
 
-// 控制台打印解析后的音频路径，方便核对
 console.table(trials.flatMap(trial =>
   conditions.map(condition => ({ trial, condition, url: audioUrl(condition, trial) }))));
 </script>
