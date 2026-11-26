@@ -11,12 +11,13 @@
   --warn:#a52c25;--warnbg:#fff4f2;
   --ref:#0b8a4b;--ref-dark:#097139;--ref-soft:#e7f6ed;
   --sample:#d9730d;--sample-dark:#b85f08;--sample-soft:#fdf1e2;
-  /* 评分等级颜色 */
-  --lv0:#d32f2f; /* 很差 */
-  --lv1:#f57c00; /* 较差 */
-  --lv2:#fbc02d; /* 一般 */
-  --lv3:#7cb342; /* 良好 */
-  --lv4:#2e7d32; /* 优秀 */
+  
+  /* 评分等级颜色（同一种颜色，强度由浅到深） */
+  --lv0: hsl(172, 40%, 72%); /* 很差：极淡 */
+  --lv1: hsl(172, 40%, 58%); /* 较差：偏淡 */
+  --lv2: hsl(172, 40%, 44%); /* 一般：中等 */
+  --lv3: hsl(172, 40%, 30%); /* 良好：偏深 */
+  --lv4: hsl(172, 40%, 18%); /* 优秀：深色 */
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,"Segoe UI",sans-serif}
@@ -82,7 +83,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 .slider-wrap{min-width:0}
 .rating output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
 
-/* ---- 评分滑块（分段彩色轨道） ---- */
+/* ---- 评分滑块（同色系渐变轨道） ---- */
 .rating input[type=range]{
   -webkit-appearance:none;appearance:none;
   width:100%;height:8px;margin:6px 0 2px;
@@ -95,7 +96,14 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
     var(--lv4) 80%, var(--lv4) 100%);
   outline:none;cursor:pointer;
 }
-.rating input[type=range].unrated{ background:#dbe6e5; }
+/* 未评分/未试听时轨道置灰 */
+.rating input[type=range].unrated{
+  background:#dbe6e5;
+}
+.rating input[type=range]:disabled {
+  cursor: not-allowed;
+}
+/* 滑块按钮统一为白底深色边框 */
 .rating input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
   width:16px;height:16px;border-radius:50%;
@@ -103,7 +111,9 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   box-shadow:0 1px 3px rgba(0,0,0,0.3);
   cursor:pointer;transition:transform .1s;
 }
-.rating input[type=range]::-webkit-slider-thumb:hover{ transform:scale(1.15); }
+.rating input[type=range]:not(:disabled)::-webkit-slider-thumb:hover{
+  transform:scale(1.15);
+}
 .rating input[type=range]::-moz-range-thumb{
   width:16px;height:16px;border-radius:50%;
   background:#fff;border:2px solid #50656a;
@@ -111,7 +121,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   cursor:pointer;
 }
 
-/* ---- 评分刻度 ---- */
+/* ---- 评分刻度：数字与等级文字同一行 ---- */
 .scale{
   position:relative;
   height:18px;
@@ -142,7 +152,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   top:0;
   white-space:nowrap;
   font-size:9px;
-  font-weight:600;
+  font-weight:700;
 }
 
 #progress{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
@@ -181,11 +191,11 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
   <h1>域内语音听音测试</h1>
   <p>请戴上耳机，在安静环境中试听。先听参考，再比较匿名样本并按整体音质评分。可随时切换样本，每次切换都会从头播放，便于逐段对比。</p>
   <p>评分范围 0–100：
-    <span style="color: var(--lv0); font-weight: 600;">0–20 很差</span> ·
-    <span style="color: var(--lv1); font-weight: 600;">21–40 较差</span> ·
-    <span style="color: var(--lv2); font-weight: 600;">41–60 一般</span> ·
-    <span style="color: var(--lv3); font-weight: 600;">61–80 良好</span> ·
-    <span style="color: var(--lv4); font-weight: 600;">81–100 优秀</span>。
+    <span style="color: var(--lv0); font-weight: 700;">0–20 很差</span> ·
+    <span style="color: var(--lv1); font-weight: 700;">21–40 较差</span> ·
+    <span style="color: var(--lv2); font-weight: 700;">41–60 一般</span> ·
+    <span style="color: var(--lv3); font-weight: 700;">61–80 良好</span> ·
+    <span style="color: var(--lv4); font-weight: 700;">81–100 优秀</span>。
   </p>
   <p class="status">
     <span style="color: var(--ref); font-weight: 600;">绿色按钮</span>播放<b>参考音频</b>，
@@ -211,7 +221,7 @@ code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1p
 
   <section>
     <h2 id="trialTitle"></h2>
-    <p>请试听并调整每个样本的评分。显示“—”表示尚未评分。</p>
+    <p>请试听并调整每个样本的评分。显示“—”表示尚未评分。必须先点击左侧字母按钮试听，才能拖动评分条。</p>
     <div id="rows"></div>
   </section>
 
@@ -304,7 +314,7 @@ let state = null;
 let participant = "";
 let currentCondition = null;
 let loadToken = 0;
-let pendingTargetIndex = null; // 记录被拦截的跳转目标
+let pendingTargetIndex = null;
 
 /* =========================================================
    4. 工具函数
@@ -412,7 +422,6 @@ function complete(item) {
     item.order.every(name => item.heard.includes(name) && Number.isInteger(item.scores[name]));
 }
 
-// 获取当前条目还没听的项目
 function getMissingItems(item) {
   const missing = [];
   if (!item.heard.includes("reference")) {
@@ -426,18 +435,15 @@ function getMissingItems(item) {
   return missing;
 }
 
-// 统一的跳转拦截入口
 function tryGoToTrial(targetIndex) {
   if (targetIndex === state.index) return;
 
   const missing = getMissingItems(record());
-
   if (missing.length === 0) {
     showTrial(targetIndex);
     return;
   }
 
-  // 存在未听项 → 暂停并弹窗
   audio.pause();
   pendingTargetIndex = targetIndex;
 
@@ -533,7 +539,15 @@ function buildRows(item) {
     slider.step = "1";
     slider.value = String(item.scores[name] ?? 50);
     slider.setAttribute("aria-label", "样本 " + label + " 的评分");
-    if (item.scores[name] == null) slider.classList.add("unrated");
+    
+    if (item.scores[name] == null) {
+      slider.classList.add("unrated");
+      // 若未评分且未听过，则禁用滑块
+      if (!item.heard.includes(name)) {
+        slider.disabled = true;
+        slider.title = "请先播放试听该样本";
+      }
+    }
 
     const wrap = document.createElement("div");
     wrap.className = "slider-wrap";
@@ -597,6 +611,18 @@ function markHeard(condition) {
     item.heard.push(condition);
     save();
     updateProgress();
+  }
+
+  // 播放即解锁对应的滑块（参考音频除外）
+  if (condition !== "reference") {
+    const btn = document.querySelector(`[data-clip="${condition}"]`);
+    if (btn) {
+      const slider = btn.parentElement.querySelector("input[type='range']");
+      if (slider && slider.disabled) {
+        slider.disabled = false;
+        slider.removeAttribute("title");
+      }
+    }
   }
 }
 
@@ -699,11 +725,9 @@ el("seek").oninput = event => {
   el("clock").textContent = at.toFixed(2) + " s";
 };
 
-// 上一条/下一条接入拦截
 el("prev").onclick = () => { if (state.index > 0) tryGoToTrial(state.index - 1); };
 el("next").onclick = () => { if (state.index < trials.length - 1) tryGoToTrial(state.index + 1); };
 
-// 弹窗按钮事件
 el("stayBtn").onclick = () => {
   el("leaveDialog").hidden = true;
   pendingTargetIndex = null;
