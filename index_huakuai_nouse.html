@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>域内语音听音测试 · MUSHRA</title>
+<style>
+:root{
+  color-scheme:light;
+  --ink:#14252a;--muted:#50656a;--brand:#006d63;--line:#d5e2e1;--paper:#f0f5f4;
+  --warn:#a52c25;--warnbg:#fff4f2;
+  --ref:#0b8a4b;--ref-dark:#097139;--ref-soft:#e7f6ed;
+  --sample:#d9730d;--sample-dark:#b85f08;--sample-soft:#fdf1e2;
+  
+  /* 评分等级颜色（灰到黑渐变，更客观区分度强） */
+  --lv0: hsl(0, 0%, 70%); /* 很差：浅灰 */
+  --lv1: hsl(0, 0%, 50%); /* 较差：中灰 */
+  --lv2: hsl(0, 0%, 35%); /* 一般：深灰 */
+  --lv3: hsl(0, 0%, 20%); /* 良好：极深灰 */
+  --lv4: hsl(0, 0%, 8%);  /* 优秀：近乎黑 */
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,"Segoe UI",sans-serif}
+main{max-width:1060px;margin:auto;padding:36px 18px}
+header,section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+h1,h2,p{margin:0 0 10px}
+h1{font-size:clamp(24px,5vw,36px)}
+h2{font-size:20px}
+button,input{font:inherit}
+button{border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);padding:7px 13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+button:hover:not(:disabled){border-color:var(--brand)}
+.primary,button.active{background:var(--brand);border-color:var(--brand);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status{color:var(--muted);margin:9px 0 0;overflow-wrap:anywhere;white-space:pre-line;transition:color 0.2s;}
+.status.error{color:var(--warn)}
+.status.warn{color:var(--warn);background:var(--warnbg);border:1px solid #f3cfca;border-radius:8px;padding:8px 10px}
+code{font:13px/1.4 ui-monospace,Consolas,monospace;background:#eef4f3;padding:1px 5px;border-radius:4px}
+
+/* ---- 精简版注意事项警告框 ---- */
+.notice-board {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-left: 6px solid #ff9800;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.notice-board h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #e65100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.notice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+}
+@media(max-width: 680px) {
+  .notice-grid { grid-template-columns: 1fr; gap: 10px; }
+}
+.notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  color: #5d4037;
+  line-height: 1.5;
+}
+.notice-icon {
+  font-size: 18px;
+  line-height: 1.3;
+}
+.notice-item strong {
+  color: #bf360c;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.notice-item b {
+  color: #bf360c;
+  background: #ffecb3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.notice-item.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ---- 听音说明优化 ---- */
+.instruction-highlight {
+  background: #f0f7f6; 
+  border-left: 4px solid var(--brand); 
+  padding: 16px 20px; 
+  border-radius: 0 10px 10px 0; 
+  margin-bottom: 24px;
+}
+.instruction-highlight .lead {
+  font-size: 17px; 
+  font-weight: 700; 
+  margin-bottom: 8px; 
+  color: var(--ink);
+}
+.instruction-highlight .desc {
+  font-size: 15px; 
+  color: var(--muted);
+  margin: 0;
+}
+.instruction-highlight .desc strong {
+  color: var(--ink);
+  background: #e6f0ef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.guide-grid {
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 24px; 
+  margin-bottom: 24px;
+}
+@media(max-width: 680px) {
+  .guide-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+.guide-col-title {
+  font-size: 14px; 
+  font-weight: 700; 
+  color: var(--muted); 
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scale-tags {
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 8px;
+}
+.scale-tag {
+  font-size: 13px; 
+  font-weight: 700; 
+  padding: 4px 10px; 
+  border-radius: 6px; 
+  background: #f0f5f4;
+}
+
+/* 播放控制说明 */
+.play-legend-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+.play-legend .note {
+  font-size: 12px; 
+  color: var(--muted); 
+  margin: 0;
+}
+
+/* ---- 播放参考按钮 ---- */
+#ref{background:var(--ref);border-color:var(--ref);color:#fff;font-weight:600}
+#ref:hover:not(:disabled){background:var(--ref-dark);border-color:var(--ref-dark)}
+
+/* ---- 顶部统一吸顶容器 ---- */
+.sticky-top-panel {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  margin-top: -16px;
+}
+
+/* ---- 音频播放进度条（专属参考音频） ---- */
+#seek{
+  flex:1;min-width:110px;margin:0;
+  -webkit-appearance:none;appearance:none;
+  height:10px;border-radius:999px;
+  --seek-color:var(--ref);
+  --seek-fill:0%;
+  background:linear-gradient(to right,
+    var(--seek-color) 0,
+    var(--seek-color) var(--seek-fill),
+    #dbe6e5 var(--seek-fill),
+    #dbe6e5 100%);
+  cursor:pointer;
+}
+#seek:disabled{opacity:.4;cursor:default}
+#seek::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;border:3px solid var(--seek-color);
+  box-shadow:0 1px 4px #0003;cursor:pointer;
+}
+#seek::-moz-range-thumb{
+  width:12px;height:12px;border-radius:50%;
+  background:#fff;border:3px solid var(--seek-color);
+  box-shadow:0 1px 4px #0003;cursor:pointer;
+}
+#seek::-moz-range-track{background:transparent;border:none}
+
+/* ---- 字幕显示区域 ---- */
+#subtitleBox {
+  background: #f8faf9;
+  border-left: 3px solid var(--ref);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 16px;
+}
+#subtitleBox .text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+/* ---- 悬浮评分细则 ---- */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  margin-left: 12px;
+}
+.tooltip-trigger {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+  background: #e6f0ef;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--brand);
+  transition: all 0.2s;
+}
+.tooltip-container:hover .tooltip-trigger {
+  background: var(--brand);
+  color: #fff;
+}
+.tooltip-content {
+  display: none;
+  position: fixed;
+  top: 100px;
+  z-index: 1000;
+  width: min(760px, 95vw);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  cursor: default;
+  text-align: left;
+}
+.tooltip-container:hover .tooltip-content {
+  display: block;
+}
+.tooltip-container.pos-right .tooltip-content { left: auto; right: 24px; }
+.tooltip-container.pos-left .tooltip-content { right: auto; left: 24px; }
+.tooltip-container:not(.pos-left):not(.pos-right) .tooltip-content { left: auto; right: 24px; }
+
+.tooltip-inner {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.tip-header {
+  margin: 0 0 16px; 
+  font-size: 15px; 
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line);
+}
+.tip-header .highlight { color: #e53935; font-weight: 700; }
+
+.tooltip-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; }
+.tooltip-col-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+
+.tooltip-dimensions { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.tooltip-dimensions li { background: #f8faf9; padding: 6px 10px; border-radius: 6px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+.tooltip-dimensions .dim-tag { font-weight: 700; color: #1976d2; background: #e3f2fd; padding: 0 6px; border-radius: 4px; white-space: nowrap; font-size: 12px; }
+
+.tooltip-rules { display: flex; flex-direction: column; gap: 6px; }
+.rule-item { padding: 8px 12px; border-radius: 6px; background: #fafafa; border: 1px solid #eee; border-left-width: 4px; border-left-style: solid; }
+.rule-item.excellent { border-left-color: #4caf50; }
+.rule-item.good { border-left-color: #8bc34a; }
+.rule-item.fair { border-left-color: #ffb300; }
+.rule-item.poor { border-left-color: #f57c00; }
+.rule-item.bad { border-left-color: #e53935; }
+.rule-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; color: var(--ink); }
+.rule-sub { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.rule-sub b { color: var(--ink); }
+
+/* ---- 评分行 ---- */
+#rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+.rating{display:grid;grid-template-columns:56px minmax(70px,1fr) 44px;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px}
+.rating button.clip{
+  font-weight:600; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center;
+  padding:6px 4px;
+  min-height:38px;
+  transition: all 0.15s;
+}
+.rating button.clip.active {
+  background: var(--sample);
+  border-color: var(--sample);
+  color: #fff;
+}
+.slider-wrap{min-width:0}
+.rating output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+/* ---- 正在播放的动画波形 ---- */
+.audio-wave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+  margin-left: 4px;
+}
+.audio-wave span {
+  display: block;
+  width: 2px;
+  background-color: currentColor;
+  border-radius: 1px;
+  animation: wave 1s ease-in-out infinite;
+}
+.audio-wave span:nth-child(1) { height: 5px; animation-delay: 0.0s; }
+.audio-wave span:nth-child(2) { height: 11px; animation-delay: 0.2s; }
+.audio-wave span:nth-child(3) { height: 7px; animation-delay: 0.4s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.3); }
+}
+
+/* ---- 评分滑块 ---- */
+.rating input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:8px;margin:6px 0 2px;
+  border-radius:4px;
+  background:linear-gradient(to right,
+    var(--lv0) 0%, var(--lv0) 20%,
+    var(--lv1) 20%, var(--lv1) 40%,
+    var(--lv2) 40%, var(--lv2) 60%,
+    var(--lv3) 60%, var(--lv3) 80%,
+    var(--lv4) 80%, var(--lv4) 100%);
+  outline:none;cursor:pointer;
+}
+.rating input[type=range].unrated{ background:#dbe6e5; }
+.rating input[type=range]:disabled { cursor: not-allowed; }
+.rating input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:#fff;border:2px solid #50656a;
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  cursor:pointer;transition:transform .1s;
+}
+.rating input[type=range]:not(:disabled)::-webkit-slider-thumb:hover{
+  transform:scale(1.15);
+}
+.rating input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;
+  background:#fff;border:2px solid #50656a;
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  cursor:pointer;
+}
+
+/* ---- 评分刻度 ---- */
+.scale{
+  position:relative;
+  height:18px;
+  margin-top:2px;
+  font-size:9px;
+  user-select:none;
+  line-height:14px;
+}
+.scale .tick{
+  position:absolute;
+  top:0;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+  color:var(--muted);
+}
+.scale .tick::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:14px;
+  width:1px;
+  height:3px;
+  background:#c3d3d1;
+  transform:translateX(-50%);
+}
+.scale .level{
+  position:absolute;
+  top:0;
+  white-space:nowrap;
+  font-size:9px;
+  font-weight:700;
+}
+
+#progress{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+#progress button.done{border-color:var(--brand);color:var(--brand)}
+#progress button.active{background:var(--brand);border-color:var(--brand);color:#fff}
+[hidden]{display:none!important}
+
+/* ---- 强阻断拦截弹窗 ---- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(20,37,42,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+  backdrop-filter: blur(2px);
+}
+.modal-content {
+  background: #fff; border-radius: 14px; padding: 24px;
+  width: min(520px, 90vw); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.modal-content h2 { font-size: 20px; margin-bottom: 12px; color: var(--warn); }
+.missing-list { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.missing-tag {
+  padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 14px;
+}
+.missing-tag.reference {
+  background: var(--ref-soft); color: var(--ref); border: 1px solid var(--ref);
+}
+.missing-tag.clip {
+  background: var(--sample-soft); color: var(--sample); border: 1px solid var(--sample);
+}
+
+@media(max-width:680px){#rows{grid-template-columns:1fr}main{padding:16px 10px}header,section{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+  
+  <!-- ================= 页面 1：前言与设置页 ================= -->
+  <div id="welcomeScreen">
+    <header>
+      <h1>域内语音听音测试</h1>
+      
+      <!-- 精简版注意事项卡片 -->
+      <div class="notice-board">
+        <h3>⚠️ 测试注意事项</h3>
+        <div class="notice-grid">
+          <div class="notice-item">
+            <span class="notice-icon">🎧</span>
+            <div><strong>环境：</strong>佩戴耳机，在安静无噪音环境中试听。</div>
+          </div>
+          <div class="notice-item">
+            <span class="notice-icon">🎯</span>
+            <div><strong>评分：</strong>先听参考。必须先点击试听，<b>才能拖动打分</b>。</div>
+          </div>
+          <div class="notice-item">
+            <span class="notice-icon">💡</span>
+            <div><strong>细则：</strong>不记得评分标准时，请悬停 <b>❓ 评分细则</b> 查看。</div>
+          </div>
+          <div class="notice-item">
+            <span class="notice-icon">🔄</span>
+            <div><strong>续听：</strong>牢记姓名，中途关闭或刷新网页可<b>断点续听</b>。</div>
+          </div>
+          <div class="notice-item full-width">
+            <span class="notice-icon">📥</span>
+            <div><strong>提交：</strong>全部完成后，请<b>务必导出 CSV</b> 交组织者。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="instruction-highlight">
+        <p class="lead">🎧 请戴上耳机，在安静环境中试听。</p>
+        <p class="desc"><strong>先听参考</strong>，再比较匿名样本并按整体音质评分。可随时切换样本，每次切换都会从头播放，便于逐段对比。</p>
+      </div>
+
+      <div class="guide-grid">
+        <div>
+          <p class="guide-col-title">评分范围 0–100</p>
+          <div class="scale-tags">
+            <span class="scale-tag" style="color: var(--lv0);">0–20 很差</span>
+            <span class="scale-tag" style="color: var(--lv1);">21–40 较差</span>
+            <span class="scale-tag" style="color: var(--lv2);">41–60 一般</span>
+            <span class="scale-tag" style="color: var(--lv3);">61–80 良好</span>
+            <span class="scale-tag" style="color: var(--lv4);">81–100 优秀</span>
+          </div>
+        </div>
+
+        <div class="play-legend">
+          <p class="guide-col-title">播放控制</p>
+          <div class="play-legend-row">
+            <span><span style="color: var(--ref); font-weight: 700;">顶部按钮</span> 播放参考音频</span>
+            <span><span style="color: var(--sample); font-weight: 700;">点击字母</span> 播放待测样本</span>
+          </div>
+          <p class="note">进度条颜色会同步变化，便于确认当前在听哪一路。</p>
+        </div>
+      </div>
+
+      <!-- 姓名输入与两个独立按钮 -->
+      <div class="bar" style="margin-top: 30px; align-items: center; flex-wrap: wrap;">
+        <label style="font-weight: 700;">参与者姓名 
+          <input id="participant" maxlength="64" autocomplete="name" placeholder="请输入您的姓名" style="margin-left: 8px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 8px;">
+        </label>
+        <div style="display: flex; gap: 10px;">
+          <button id="btnStartNew" style="padding: 9px 20px; font-weight: 700; border-color: #ff9800; color: #e65100;">🔄 首次开始 (清空进度)</button>
+          <button id="btnStartResume" class="primary" style="padding: 9px 20px; font-weight: 700;">▶️ 继续测试 (断点续听)</button>
+        </div>
+      </div>
+      <p id="setupStatus" class="status" role="status"></p>
+    </header>
+  </div>
+
+  <!-- ================= 页面 2：正式评分页 ================= -->
+  <div id="experiment" hidden>
+    
+    <!-- 统一吸顶区域 -->
+    <div class="sticky-top-panel">
+      <section id="transport" style="margin-bottom:0; box-shadow:0 3px 10px #18332d14;">
+        <div class="bar">
+          <button id="ref">▶️ 播放参考</button>
+          <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="播放位置">
+          <span id="clock">0.00 s</span>
+        </div>
+        <p id="audioStatus" class="status" role="status"></p>
+      </section>
+    </div>
+
+    <section>
+      <!-- 标题与提醒 -->
+      <div class="bar" style="align-items: baseline; margin-bottom: 10px; gap: 12px;">
+        <h2 id="trialTitle" style="margin:0;"></h2>
+        <span style="font-size:14px; font-weight:700; color:var(--ref); background:var(--ref-soft); padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+          🎧 请先播放参考！
+        </span>
+      </div>
+
+      <!-- 字幕显示区域 -->
+      <div id="subtitleBox" hidden>
+        <div class="text" id="subtitleText"></div>
+      </div>
+
+      <!-- 提示文字与悬浮细则 -->
+      <div class="bar" style="margin-top: 5px; margin-bottom: 14px;">
+        <p style="margin:0;">必须先点击左侧字母按钮试听，才能拖动评分条。<strong>再次点击播放中的音频即可暂停/继续。</strong></p>
+        
+        <!-- 悬浮细则容器 -->
+        <div class="tooltip-container" id="tooltipContainer">
+          <span class="tooltip-trigger">❓ 评分细则</span>
+          <div class="tooltip-content">
+            <div class="tooltip-inner">
+              <p class="tip-header">请根据音频 <strong class="highlight">与参考音频的音质差异</strong> 进行评分。评分标准如下：</p>
+              
+              <div class="tooltip-grid">
+                <!-- 左栏：5个维度 -->
+                <div class="tooltip-col">
+                  <div class="tooltip-col-title">🔍 参考对比维度</div>
+                  <ul class="tooltip-dimensions">
+                    <li><span class="dim-tag">内容</span> 每个词都能听清？有无丢字/错字/模糊？</li>
+                    <li><span class="dim-tag">音色</span> 听起来是否还是同一个人说的？</li>
+                    <li><span class="dim-tag">韵律</span> 语调节奏是否一致？</li>
+                    <li><span class="dim-tag">响度</span> 音量是否稳定？</li>
+                    <li><span class="dim-tag">噪声</span> 背景是否干净，有无明显失真？</li>
+                  </ul>
+                </div>
+
+                <!-- 右栏：分数段说明 -->
+                <div class="tooltip-col">
+                  <div class="tooltip-col-title">📊 评分等级标准</div>
+                  <div class="tooltip-rules">
+                    <div class="rule-item excellent">
+                      <div class="rule-title">85-100: 优秀</div>
+                      <div class="rule-sub">与参考音频相比几乎无差别或完全一致。<br><b>95-100</b>: 感觉完全相同（无任何可闻差异）<br><b>85-94</b>: 有极细微差别，但需仔细对比才能察觉</div>
+                    </div>
+                    <div class="rule-item good">
+                      <div class="rule-title">70-84: 良好</div>
+                      <div class="rule-sub">有轻微但可察觉的差别（例如音色略有不同/轻微噪声），但不影响整体听感。</div>
+                    </div>
+                    <div class="rule-item fair">
+                      <div class="rule-title">50-69: 一般</div>
+                      <div class="rule-sub">质量明显下降（能感知到至少一个方面的明显问题，如音色改变、背景噪声等）。</div>
+                    </div>
+                    <div class="rule-item poor">
+                      <div class="rule-title">20-49: 差</div>
+                      <div class="rule-sub">严重失真（多个方面有明显问题，如音色扭曲、噪声严重、可懂度下降）。</div>
+                    </div>
+                    <div class="rule-item bad">
+                      <div class="rule-title">0-19: 非常差</div>
+                      <div class="rule-sub">极度刺耳或无法接受，与锚点（低质量参考）类似或更差。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rows"></div>
+    </section>
+
+    <section>
+      <div class="bar">
+        <button id="prev">上一条</button>
+        <button id="next">下一条</button>
+        <button id="export" class="primary" disabled>导出完整结果 CSV</button>
+        <span id="completion" role="status"></span>
+      </div>
+      <nav id="progress" aria-label="测试进度"></nav>
+      <p class="status">评分保存在本浏览器中。全部完成后请导出 CSV 交给测试组织者。</p>
+    </section>
+  </div>
+
+</main>
+
+<!-- 强阻断拦截弹窗 -->
+<div id="leaveDialog" class="modal-overlay" hidden>
+  <div class="modal-content">
+    <h2>当前语音还没听完整</h2>
+    <p>您还没有试听以下项目：</p>
+    <div id="missingItems" class="missing-list"></div>
+    <p class="status" style="margin-top:16px;">必须先听完当前语音的所有样本（包括参考），才能进入后续的测试。这有助于您做出更准确的对比评分。</p>
+    <div class="bar" style="justify-content: flex-end; margin-top: 20px;">
+      <button id="stayBtn" class="primary">去听没听的模型</button>
+    </div>
+  </div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+"use strict";
+
+/* =========================================================
+   1. 音频路径配置（唯一需要改的地方）
+   ========================================================= */
+const audioRoot     = "audio";          // 相对 mushra_indomain.html 的目录
+const referenceFile = "reference.wav";  // 参考音频文件名
+
+const MEDIA_ERRORS = {
+  1: "加载被中止",
+  2: "网络错误：文件不存在或路径不正确",
+  3: "音频解码失败",
+  4: "文件找不到或格式不支持"
+};
+
+function fileName(condition) {
+  return condition === "hidden_reference" ? referenceFile : condition + ".wav";
+}
+
+function audioUrl(condition, trial) {
+  const root = String(audioRoot).replace(/\/+$/, "");
+  return root + "/" + encodeURIComponent(trial) + "/" + encodeURIComponent(fileName(condition));
+}
+
+/* =========================================================
+   2. 数据
+   ========================================================= */
+const trials = [
+  "01_clean_8463_294825_000023_000002", "02_clean_6829_68771_000048_000000",
+  "03_clean_260_123286_000042_000000",
+  "04_clean_237_134500_000004_000008", "05_clean_8555_284447_000026_000001",
+  "06_other_1998_15444_000007_000001", "07_other_7902_96594_000072_000003",
+  "08_other_2609_156975_000020_000000", "09_other_5764_299665_000073_000002",
+  "10_other_8131_117016_000014_000002"
+];
+
+const conditions = [
+  "BigCodec_1040bps", "FMelCodec_250bps", "FocalCodec_330bps", "FocalCodec_650bps",
+  "FreqCodec_1000bps", "FreqCodec_500bps", "MDCTCodec_1000bps", "MDCTCodec_500bps",
+  "PriorCodec_1000bps", "PriorCodec_250bps", "PriorCodec_500bps", "SAQCodec_300bps",
+  "SAQCodec_675bps", "SemantiCodec_1250bps", "SemantiCodec_310bps", "SemantiCodec_630bps",
+  "hidden_reference", "anchor_speex_3950bps"
+];
+
+// 参考音频字幕映射表
+const subtitles = {
+  "8463_294825_000023_000002": "And Verne's marine engineering proves especially authoritative.",
+  "6829_68771_000048_000000": "\"I will go,\" said Beth, a little frightened at the passionate appeal.",
+  "260_123286_000042_000000": "\"Yes,\" replied my uncle, \"and there is a sea lizard of vast size.\"",
+  "237_134500_000004_000008": "His yellow canvas leggings and khaki trousers were splashed to the knees.",
+  "8555_284447_000026_000001": "Immediately the Boolooroo flew into another towering rage.",
+  "1998_15444_000007_000001": "The second indication is met by the administration of the appropriate antidote.",
+  "7902_96594_000072_000003": "Don't see me getting out o' temper with everybody, and spitting and swearing like a mad Tom cat.",
+  "2609_156975_000020_000000": "Hold on; hold fast: hold out-patience is genius.",
+  "5764_299665_000073_000002": "When the church had control, were men made better and happier?",
+  "8131_117016_000014_000002": "Take those two and give them some lessons, while I do the same with these."
+};
+
+const TICK_VALUES  = ["0", "20", "40", "60", "80", "100"];
+const LEVEL_LABELS = ["很差", "较差", "一般", "良好", "优秀"];
+const LEVEL_COLORS = ["var(--lv0)", "var(--lv1)", "var(--lv2)", "var(--lv3)", "var(--lv4)"];
+
+/* =========================================================
+   3. 运行时状态
+   ========================================================= */
+const el = id => document.getElementById(id);
+const storagePrefix = "mushra-priorcodec-indomain-v1:";
+const audio = el("audio");
+
+let state = null;
+let participant = "";
+let currentCondition = null;
+let loadToken = 0;
+
+/* =========================================================
+   4. 工具函数
+   ========================================================= */
+function shuffle(items) {
+  const result = items.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function setStatus(text, kind, colorMode) {
+  const node = el("audioStatus");
+  node.className = "status" + (kind ? " " + kind : "");
+  node.textContent = text;
+  
+  if (colorMode === "ref") {
+    node.style.color = "var(--ref)";
+  } else if (colorMode === "sample") {
+    node.style.color = "var(--sample)";
+  } else {
+    node.style.color = "";
+  }
+}
+
+function describeMediaError(media) {
+  if (!media.error) return "未知错误";
+  return MEDIA_ERRORS[media.error.code] || ("错误码 " + media.error.code);
+}
+
+function waitForMetadata(media) {
+  if (media.readyState >= 1 && Number.isFinite(media.duration)) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const done = () => { cleanup(); resolve(); };
+    const fail = () => { cleanup(); reject(new Error(describeMediaError(media))); };
+    const cleanup = () => {
+      media.removeEventListener("loadedmetadata", done);
+      media.removeEventListener("error", fail);
+    };
+    media.addEventListener("loadedmetadata", done);
+    media.addEventListener("error", fail);
+  });
+}
+
+function setSeekFill(time) {
+  const max = Number(el("seek").max) || 1;
+  const pct = max > 0 ? Math.min(100, Math.max(0, (time / max) * 100)) : 0;
+  el("seek").style.setProperty("--seek-fill", pct.toFixed(2) + "%");
+}
+
+/* =========================================================
+   5. 持久化与开始
+   ========================================================= */
+function save() {
+  if (!participant || !state) return;
+  try {
+    localStorage.setItem(storagePrefix + participant, JSON.stringify(state));
+  } catch (error) {
+    el("setupStatus").textContent = "浏览器无法保存进度，请在关闭页面前导出结果。";
+  }
+}
+
+function startTest(isNew) {
+  const name = el("participant").value.trim();
+  if (!name) {
+    el("setupStatus").textContent = "请输入参与者姓名。";
+    return;
+  }
+  participant = name;
+
+  if (isNew) {
+    // 首次开始：清空所有以 storagePrefix 开头的记录（清空别人的遗留打分）
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(storagePrefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    state = null; // 强制重置
+  } else {
+    // 继续测试：尝试读取
+    try { state = JSON.parse(localStorage.getItem(storagePrefix + name)); }
+    catch (error) { state = null; }
+    
+    if (!state || !state.order || !state.items) {
+      el("setupStatus").textContent = "未找到该姓名（" + name + "）的历史进度，请确认姓名是否正确，或点击“首次开始”。";
+      return;
+    }
+  }
+
+  // 如果 state 依然为空（首次开始），则创建新状态
+  if (!state || !state.order || !state.items) {
+    state = {
+      index: 0,
+      order: shuffle(trials),
+      items: Object.fromEntries(trials.map(trial => [trial, {
+        order: shuffle(conditions), scores: {}, heard: []
+      }]))
+    };
+  }
+  
+  // 容错：补齐缺失条目
+  trials.forEach(trial => {
+    if (!state.items[trial]) {
+      state.items[trial] = { order: shuffle(conditions), scores: {}, heard: [] };
+    }
+  });
+
+  el("welcomeScreen").hidden = true;
+  el("experiment").hidden = false;
+  
+  save();
+  showTrial(state.index);
+}
+
+/* =========================================================
+   6. 试次逻辑
+   ========================================================= */
+const trialId = () => state.order[state.index];
+const record  = () => state.items[trialId()];
+
+function complete(item) {
+  return item.heard.includes("reference") &&
+    item.order.every(name => item.heard.includes(name) && Number.isInteger(item.scores[name]));
+}
+
+function getMissingItems(item) {
+  const missing = [];
+  if (!item.heard.includes("reference")) {
+    missing.push({ type: "reference", label: "参考" });
+  }
+  item.order.forEach((name, index) => {
+    if (!item.heard.includes(name)) {
+      missing.push({ type: "clip", label: String.fromCharCode(65 + index) });
+    }
+  });
+  return missing;
+}
+
+// 限制不能往后跳，但允许往回听
+function tryGoToTrial(targetIndex) {
+  if (targetIndex === state.index) return;
+
+  // 如果是回头听前面的条目，直接放行，不拦截
+  if (targetIndex < state.index) {
+    showTrial(targetIndex);
+    return;
+  }
+
+  // 如果是要往后跳（下一条或后面的数字），检查当前条目是否完整
+  const missing = getMissingItems(record());
+  if (missing.length === 0) {
+    showTrial(targetIndex);
+    return;
+  }
+
+  audio.pause();
+
+  const list = el("missingItems");
+  list.replaceChildren();
+  missing.forEach(m => {
+    const span = document.createElement("span");
+    span.className = "missing-tag " + m.type;
+    span.textContent = m.label;
+    list.append(span);
+  });
+
+  el("leaveDialog").hidden = false;
+}
+
+function updateProgress() {
+  if (!state) return;
+  const count = state.order.filter(id => complete(state.items[id])).length;
+  el("completion").textContent = "已完成 " + count + " / " + trials.length + " 条";
+  el("export").disabled = count !== trials.length;
+  el("prev").disabled = state.index === 0;
+  el("next").disabled = state.index === trials.length - 1;
+
+  const nav = el("progress");
+  nav.replaceChildren();
+  state.order.forEach((id, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = String(index + 1);
+    button.classList.toggle("done", complete(state.items[id]));
+    button.classList.toggle("active", index === state.index);
+    if (index === state.index) button.setAttribute("aria-current", "step");
+    button.onclick = () => tryGoToTrial(index);
+    nav.append(button);
+  });
+}
+
+function buildScale() {
+  const scale = document.createElement("div");
+  scale.className = "scale";
+  scale.setAttribute("aria-hidden", "true");
+  const n = TICK_VALUES.length;
+
+  TICK_VALUES.forEach((value, i) => {
+    const span = document.createElement("span");
+    span.className = "tick";
+    span.textContent = value;
+    const left = (i / (n - 1)) * 100;
+    span.style.left = left + "%";
+    if (i === 0) span.style.transform = "translateX(0)";
+    else if (i === n - 1) span.style.transform = "translateX(-100%)";
+    else span.style.transform = "translateX(-50%)";
+    scale.append(span);
+  });
+
+  LEVEL_LABELS.forEach((text, i) => {
+    const span = document.createElement("span");
+    span.className = "level";
+    span.textContent = text;
+    span.style.color = LEVEL_COLORS[i];
+    
+    let left = ((i + 0.5) / (n - 1)) * 100;
+    if (i === 0) left += 2; 
+    if (i === n - 2) left -= 2; 
+    
+    span.style.left = left + "%";
+    span.style.transform = "translateX(-50%)";
+    scale.append(span);
+  });
+
+  return scale;
+}
+
+function buildRows(item) {
+  const rows = el("rows");
+  rows.replaceChildren();
+
+  item.order.forEach((name, index) => {
+    const label = String.fromCharCode(65 + index);
+
+    const row = document.createElement("div");
+    row.className = "rating";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "clip";
+    button.dataset.clip = name;
+    button.setAttribute("aria-label", "播放样本 " + label);
+    button.setAttribute("aria-pressed", "false");
+    button.onclick = () => togglePlay(name);
+    
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label;
+    button.append(labelSpan);
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "100";
+    slider.step = "1";
+    slider.value = String(item.scores[name] ?? 50);
+    slider.setAttribute("aria-label", "样本 " + label + " 的评分");
+    
+    if (item.scores[name] == null) {
+      slider.classList.add("unrated");
+      if (!item.heard.includes(name)) {
+        slider.disabled = true;
+        slider.title = "请先播放试听该样本";
+      }
+    }
+
+    const wrap = document.createElement("div");
+    wrap.className = "slider-wrap";
+    wrap.append(slider, buildScale());
+
+    const score = document.createElement("output");
+    score.textContent = item.scores[name] ?? "—";
+
+    const rate = () => {
+      item.scores[name] = Number(slider.value);
+      score.textContent = String(slider.value);
+      slider.classList.remove("unrated");
+      save();
+      updateProgress();
+    };
+    slider.addEventListener("input", rate);
+    slider.addEventListener("change", rate);
+
+    row.append(button, wrap, score);
+    rows.append(row);
+  });
+}
+
+function showTrial(index) {
+  loadToken++;
+  currentCondition = null; // 先清空状态，避免暂停事件更新旧的 UI
+  audio.pause();
+  
+  try { audio.currentTime = 0; } catch (error) { /* 忽略 */ }
+  delete audio.dataset.url;
+
+  state.index = index;
+  const currentTrial = trialId();
+
+  el("seek").disabled = true;
+  el("seek").max = "1";
+  el("seek").value = "0";
+  el("seek").style.setProperty("--seek-fill", "0%");
+  el("clock").textContent = "0.00 s";
+
+  el("ref").textContent = "▶️ 播放参考";
+  setStatus("点击“播放参考”或任意样本按钮开始试听。");
+  el("trialTitle").textContent = "测试语音 " + (index + 1) + " / " + trials.length;
+
+  // 更新字幕显示
+  const subKey = Object.keys(subtitles).find(k => currentTrial.includes(k));
+  if (subKey) {
+    el("subtitleText").textContent = subtitles[subKey];
+    el("subtitleBox").hidden = false;
+  } else {
+    el("subtitleBox").hidden = true;
+  }
+
+  // 重置细则位置状态
+  const tooltipContainer = el("tooltipContainer");
+  tooltipContainer.classList.remove("pos-left", "pos-right");
+
+  buildRows(record());
+  markActive(null, false);
+  updateProgress();
+  save();
+}
+
+// 更新激活状态和音轨动画
+function markActive(condition, isPlaying) {
+  document.querySelectorAll("[data-clip]").forEach(button => {
+    const on = button.dataset.clip === condition;
+    button.classList.toggle("active", on);
+    button.setAttribute("aria-pressed", String(on));
+    
+    let wave = button.querySelector(".audio-wave");
+    if (on && isPlaying && condition !== "reference") {
+      if (!wave) {
+        wave = document.createElement("div");
+        wave.className = "audio-wave";
+        wave.innerHTML = "<span></span><span></span><span></span>";
+        button.appendChild(wave);
+      }
+    } else {
+      if (wave) wave.remove();
+    }
+  });
+}
+
+function markHeard(condition) {
+  const item = record();
+  if (!item.heard.includes(condition)) {
+    item.heard.push(condition);
+    save();
+    updateProgress();
+  }
+
+  if (condition !== "reference") {
+    const btn = document.querySelector(`[data-clip="${condition}"]`);
+    if (btn) {
+      const slider = btn.parentElement.querySelector("input[type='range']");
+      if (slider && slider.disabled) {
+        slider.disabled = false;
+        slider.removeAttribute("title");
+      }
+    }
+  }
+}
+
+/* =========================================================
+   7. 播放引擎（支持暂停/继续）
+   ========================================================= */
+async function togglePlay(condition) {
+  const trial = trialId();
+  const url = audioUrl(condition, trial);
+  const isReference = condition === "reference";
+  const label = isReference
+    ? "参考"
+    : "样本 " + String.fromCharCode(65 + record().order.indexOf(condition));
+
+  // 动态调整细则弹窗的左右位置
+  if (!isReference) {
+    const index = record().order.indexOf(condition);
+    const tooltipContainer = el("tooltipContainer");
+    if (index % 2 === 0) {
+      tooltipContainer.classList.add("pos-right");
+      tooltipContainer.classList.remove("pos-left");
+    } else {
+      tooltipContainer.classList.add("pos-left");
+      tooltipContainer.classList.remove("pos-right");
+    }
+  }
+
+  // 1. 如果当前点击的正是已加载的音频（且不是重新切题导致的）
+  if (audio.dataset.url === url && currentCondition !== null) {
+    if (audio.paused) {
+      // 从暂停中继续播放
+      try {
+        await audio.play();
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setStatus(label + " 无法播放：" + error.message, "error");
+        }
+      }
+    } else {
+      // 正在播放，直接暂停
+      audio.pause();
+    }
+    return;
+  }
+
+  // 2. 需要切换到新音频
+  currentCondition = null; // 重置，防止原音频的 pause 事件引发 UI 混乱
+  audio.pause();
+  
+  const token = ++loadToken;
+  setStatus("正在载入 " + label + " …", null, isReference ? "ref" : "sample");
+  audio.src = url;
+  audio.dataset.url = url;
+
+  try {
+    await waitForMetadata(audio);
+  } catch (error) {
+    if (token !== loadToken) return;
+    setStatus(label + " 无法载入：" + error.message + "\nURL: " + url, "error");
+    return;
+  }
+  if (token !== loadToken) return;
+
+  if (isReference) {
+    el("seek").disabled = false;
+  } else {
+    el("seek").disabled = true;
+  }
+
+  audio.currentTime = 0; // 从头播放
+  currentCondition = condition; // 确定当前环境
+  markHeard(condition);
+
+  try {
+    await audio.play();
+  } catch (error) {
+    if (token !== loadToken || error.name === "AbortError") return;
+    setStatus(label + " 无法播放：" + error.message + "\nURL: " + url, "error");
+    return;
+  }
+  if (token !== loadToken) { audio.pause(); return; }
+}
+
+function updateClock() {
+  if (currentCondition !== "reference") return;
+
+  const time = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+  const duration = audio.duration;
+  el("seek").value = String(time);
+  setSeekFill(time);
+  el("clock").textContent = Number.isFinite(duration) && duration > 0
+    ? time.toFixed(2) + " / " + duration.toFixed(2) + " s"
+    : time.toFixed(2) + " s";
+}
+
+/* =========================================================
+   8. 事件绑定
+   ========================================================= */
+audio.addEventListener("loadedmetadata", () => {
+  if (currentCondition === "reference") {
+    el("seek").disabled = false;
+    el("seek").max = String(Number.isFinite(audio.duration) ? audio.duration : 1);
+    updateClock();
+  }
+});
+
+audio.addEventListener("play", () => {
+  if (currentCondition === "reference") {
+    el("ref").textContent = "⏸ 暂停参考";
+  }
+  if (currentCondition) {
+    markActive(currentCondition, true);
+    const isRef = currentCondition === "reference";
+    const label = isRef ? "参考" : "样本 " + String.fromCharCode(65 + record().order.indexOf(currentCondition));
+    setStatus("正在播放 " + label, null, isRef ? "ref" : "sample");
+    if (isRef) el("seek").disabled = false;
+  }
+});
+
+audio.addEventListener("pause", () => {
+  if (currentCondition === "reference") {
+    el("ref").textContent = "▶️ 播放参考";
+  }
+  if (currentCondition) {
+    markActive(currentCondition, false);
+    if (!audio.ended) {
+      const isRef = currentCondition === "reference";
+      const label = isRef ? "参考" : "样本 " + String.fromCharCode(65 + record().order.indexOf(currentCondition));
+      setStatus("已暂停 " + label, null, isRef ? "ref" : "sample");
+    }
+  }
+});
+
+audio.addEventListener("ended", () => {
+  updateClock();
+  if (currentCondition) {
+    markActive(currentCondition, false);
+    const isRef = currentCondition === "reference";
+    const label = isRef ? "参考" : "样本 " + String.fromCharCode(65 + record().order.indexOf(currentCondition));
+    setStatus("播放结束，可切换样本继续比较。", null, isRef ? "ref" : "sample");
+    if (isRef) el("ref").textContent = "▶️ 播放参考";
+  }
+});
+
+setInterval(() => { if (!audio.paused && !audio.seeking) updateClock(); }, 60);
+
+el("btnStartNew").onclick = () => startTest(true);
+el("btnStartResume").onclick = () => startTest(false);
+el("ref").onclick = () => togglePlay("reference");
+
+el("seek").oninput = event => {
+  if (currentCondition !== "reference") return;
+  const at = Number(event.target.value);
+  if (audio.readyState >= 1) audio.currentTime = at;
+  setSeekFill(at);
+  el("clock").textContent = at.toFixed(2) + " s";
+};
+
+el("prev").onclick = () => { if (state.index > 0) tryGoToTrial(state.index - 1); };
+el("next").onclick = () => { if (state.index < trials.length - 1) tryGoToTrial(state.index + 1); };
+
+el("stayBtn").onclick = () => {
+  el("leaveDialog").hidden = true;
+};
+
+window.addEventListener("beforeunload", save);
+
+/* =========================================================
+   9. 导出 CSV
+   ========================================================= */
+el("export").onclick = () => {
+  if (!state.order.every(id => complete(state.items[id]))) return;
+
+  const lines = [["participant_id", "presentation_order", "trial_id", "split",
+    "stimulus_label", "condition", "score"]];
+
+  const safeId = /^[=+\-@]/.test(participant) ? "'" + participant : participant;
+
+  state.order.forEach((trial, index) => {
+    const item = state.items[trial];
+    item.order.forEach((name, slot) => lines.push([
+      safeId, index + 1, trial, trial.split("_")[1],
+      String.fromCharCode(65 + slot), name, item.scores[name]
+    ]));
+  });
+
+  const csv = lines.map(row => row.map(value =>
+    '"' + String(value).replaceAll('"', '""') + '"').join(",")).join("\r\n");
+
+  const url = URL.createObjectURL(new Blob(["\ufeff", csv], {type: "text/csv;charset=utf-8"}));
+
+  const fileSafe = participant
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
+    .trim() || "participant";
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "mushra_indomain_" + fileSafe + ".csv";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+/* =========================================================
+   10. 启动自检
+   ========================================================= */
+if (location.protocol === "file:") {
+  el("setupStatus").className = "status warn";
+  el("setupStatus").innerHTML =
+    "⚠️ 你正在用 <code>file://</code> 直接打开页面，部分浏览器会拦截本地音频。\n" +
+    "请在项目目录执行 <code>python -m http.server 8000</code>，再访问 " +
+    "<code>http://localhost:8000/mushra_indomain.html</code>。";
+}
+
+console.table(trials.flatMap(trial =>
+  conditions.map(condition => ({ trial, condition, url: audioUrl(condition, trial) }))));
+</script>
+</body>
+</html>
